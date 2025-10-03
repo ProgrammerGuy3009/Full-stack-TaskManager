@@ -1,15 +1,37 @@
 const Task = require('./models/Task');
 const express = require('express');
 const router = express.Router();
+const { verifyToken } = require('./auth.middleware');
 // Create a new task
-router.post('/', async (req, res) => {
+// router.post('/', async (req, res) => {
+//   try {
+//     const { title, description, priority, status, dueDate, tags } = req.body;
+//     const newTask = new Task({ title, description, priority, status, dueDate, tags });
+//     const saved = await newTask.save();
+//     res.status(201).json({ success: true, task: saved });
+//   } catch (err) {
+//     res.status(500).json({ success: false, message: err.message });
+//   }
+// });
+router.post('/', verifyToken, async (req, res) => {
   try {
     const { title, description, priority, status, dueDate, tags } = req.body;
-    const newTask = new Task({ title, description, priority, status, dueDate, tags });
+    // req.user.id should be set by verifyToken
+    const userId = req.user.id;   
+    const newTask = new Task({
+      title,
+      description,
+      priority,
+      status,
+      dueDate,
+      tags,
+      user: userId
+    });
     const saved = await newTask.save();
     res.status(201).json({ success: true, task: saved });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error('Create Task Error:', err);
+    res.status(500).json({ success: false, message: 'Error creating task', error: err.message });
   }
 });
 
