@@ -30,7 +30,7 @@ export default function AdvancedSearch({ onSearch, onExport, taskCount }: Advanc
   });
   const [showAdvanced, setShowAdvanced] = useState(false);
 
-  const handleFilterChange = (key: keyof SearchFilters, value: any) => {
+  const handleFilterChange = (key: keyof SearchFilters, value: string | number | boolean) => {
     const newFilters = { ...filters, [key]: value };
     setFilters(newFilters);
     onSearch(newFilters);
