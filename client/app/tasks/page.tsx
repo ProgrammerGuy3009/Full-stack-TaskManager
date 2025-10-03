@@ -130,7 +130,8 @@ export default function TasksPage() {
     setEditingTask(null);
   };
 
-  const handleModalSubmit = async (taskData: any) => {
+  // const handleModalSubmit = async (taskData: any) => {
+  const handleModalSubmit = async (taskData: Omit<Task, "id" | "createdAt"> | Task) => {
     if (editingTask) {
       await handleEditTask({ ...taskData, _id: editingTask._id });
     } else {
