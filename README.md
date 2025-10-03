@@ -2,7 +2,8 @@
 
 A scalable, professional task management web application built with **Next.js 15**, **Node.js/Express**, and **MongoDB**, featuring JWT authentication, comprehensive dashboard analytics, and advanced task management capabilities.
 
-![Project Banner](./screenshots/banner.png)
+<img width="1536" height="672" alt="image" src="https://github.com/user-attachments/assets/5f6f9fe5-2bc7-4bbb-b613-2c7ad1f77780" />
+
 
 ---
 
@@ -20,39 +21,47 @@ This project was developed as a **scalable web application with authentication &
 ### 🏠 Landing Page
 *Professional homepage with clear call-to-action*
 
-![Landing Page](./screenshots/homepage.png)
+<img width="1919" height="860" alt="image" src="https://github.com/user-attachments/assets/4f0cd70d-79df-496b-a7df-00e0b859caa4" />
+
 
 ### 🔐 Authentication System
 *Secure registration and login with validation*
 
 | Registration | Login |
 |-------------|-------|
-| ![Registration](./screenshots/register.png) | ![Login](./screenshots/login.png) |
+| <img width="1889" height="862" alt="image" src="https://github.com/user-attachments/assets/2f16be8d-57c7-459c-b07a-a524b13325ac" />
+ | <img width="1909" height="857" alt="image" src="https://github.com/user-attachments/assets/832ea7e6-335f-40d3-b3bc-1542a8598968" />
+ |
 
 ### 📊 Dashboard Analytics
 *Real-time task statistics and productivity insights*
 
-![Dashboard](./screenshots/dashboard.png)
+<img width="1504" height="855" alt="image" src="https://github.com/user-attachments/assets/59684d52-7d76-49aa-9a86-79ddbae92c1c" />
+
 
 ### ✅ Task Management
 *Complete CRUD operations with advanced filtering*
 
-![Task Management](./screenshots/tasks.png)
+<img width="1517" height="859" alt="image" src="https://github.com/user-attachments/assets/02e417c4-48c2-45c7-8904-18210f83317a" />
+
 
 ### 📈 Analytics Page
 *Detailed productivity analytics and progress tracking*
 
-![Analytics](./screenshots/analytics.png)
+<img width="1504" height="780" alt="image" src="https://github.com/user-attachments/assets/f182af52-c384-4bb5-8fe4-665c7dee3562" />
+<img width="1509" height="753" alt="image" src="https://github.com/user-attachments/assets/4e45443d-3ee7-4b26-b072-778fa1261ed3" />
+
 
 ### 👤 User Profile
 *Profile management and application settings*
 
-![Profile](./screenshots/profile.png)
+<img width="1502" height="835" alt="image" src="https://github.com/user-attachments/assets/dab72add-4777-454a-937f-edd065a206a9" 
+   <img width="1071" height="729" alt="image" src="https://github.com/user-attachments/assets/a4376c6b-98ab-4833-805d-af65a667949a" />
+
+
 
 ### 📱 Mobile Responsive
 *Fully responsive design across all devices*
-
-![Mobile View](./screenshots/mobile.png)
 
 ---
 
