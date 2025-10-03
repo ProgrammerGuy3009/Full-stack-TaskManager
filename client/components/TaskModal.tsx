@@ -36,7 +36,7 @@ export default function TaskModal({ isOpen, onClose, onSubmit, task }: TaskModal
     if (task) {
       setFormData({
         ...task,
-        dueDate: task.dueDate ? task.dueDate.split('T')[0] : '', // Format date for input
+        dueDate: task.dueDate ? task.dueDate.split('T')[0] : '',
         completed: typeof task.completed === 'boolean' ? task.completed : false
       });
     } else {
