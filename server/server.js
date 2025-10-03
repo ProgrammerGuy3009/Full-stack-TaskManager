@@ -1,7 +1,17 @@
 const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
+const mongoose = require('mongoose');
+const User = require('./models/User');
+const Task = require('./models/Task');
 require('dotenv').config();
+
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+})
+.then(() => console.log('Connected to MongoDB Atlas!'))
+.catch(err => console.error('MongoDB connection error:', err));
 
 const app = express();
 
@@ -10,34 +20,34 @@ app.use(cors());
 app.use(express.json());
 
 // In-memory storage for tasks (simulating database)
-let tasks = [
-  {
-    _id: '1',
-    title: 'Complete Project Documentation',
-    description: 'Write comprehensive documentation for the task management system',
-    priority: 'high',
-    status: 'in-progress',
-    completed: false,
-    dueDate: '2025-10-05',
-    tags: ['documentation', 'project'],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  },
-  {
-    _id: '2',
-    title: 'Design Database Schema',
-    description: 'Create the database schema for tasks and users',
-    priority: 'medium',
-    status: 'completed',
-    completed: true,
-    dueDate: '2025-10-03',
-    tags: ['database', 'design'],
-    createdAt: new Date(Date.now() - 86400000).toISOString(),
-    updatedAt: new Date().toISOString()
-  }
-];
+// let tasks = [
+//   {
+//     _id: '1',
+//     title: 'Complete Project Documentation',
+//     description: 'Write comprehensive documentation for the task management system',
+//     priority: 'high',
+//     status: 'in-progress',
+//     completed: false,
+//     dueDate: '2025-10-05',
+//     tags: ['documentation', 'project'],
+//     createdAt: new Date().toISOString(),
+//     updatedAt: new Date().toISOString()
+//   },
+//   {
+//     _id: '2',
+//     title: 'Design Database Schema',
+//     description: 'Create the database schema for tasks and users',
+//     priority: 'medium',
+//     status: 'completed',
+//     completed: true,
+//     dueDate: '2025-10-03',
+//     tags: ['database', 'design'],
+//     createdAt: new Date(Date.now() - 86400000).toISOString(),
+//     updatedAt: new Date().toISOString()
+//   }
+// ];
 
-let nextTaskId = 3;
+// let nextTaskId = 3;
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -178,181 +188,255 @@ app.get('/api/auth/verify', (req, res) => {
 
 
 // Task routes with full CRUD operations
-app.get('/api/tasks/stats', (req, res) => {
-  const totalTasks = tasks.length;
-  const completedTasks = tasks.filter(t => t.completed).length;
-  const pendingTasks = totalTasks - completedTasks;
-  const highPriorityTasks = tasks.filter(t => t.priority === 'high').length;
+// app.get('/api/tasks/stats', (req, res) => {
+//   const totalTasks = tasks.length;
+//   const completedTasks = tasks.filter(t => t.completed).length;
+//   const pendingTasks = totalTasks - completedTasks;
+//   const highPriorityTasks = tasks.filter(t => t.priority === 'high').length;
   
-  // Calculate overdue tasks
-  const overdueTasks = tasks.filter(t => 
-    t.dueDate && 
-    new Date(t.dueDate) < new Date() && 
-    !t.completed
-  ).length;
+//   // Calculate overdue tasks
+//   const overdueTasks = tasks.filter(t => 
+//     t.dueDate && 
+//     new Date(t.dueDate) < new Date() && 
+//     !t.completed
+//   ).length;
 
-  // Tasks by status
-  const todoTasks = tasks.filter(t => t.status === 'todo').length;
-  const inProgressTasks = tasks.filter(t => t.status === 'in-progress').length;
-  const completedStatusTasks = tasks.filter(t => t.status === 'completed').length;
+//   // Tasks by status
+//   const todoTasks = tasks.filter(t => t.status === 'todo').length;
+//   const inProgressTasks = tasks.filter(t => t.status === 'in-progress').length;
+//   const completedStatusTasks = tasks.filter(t => t.status === 'completed').length;
 
-  // Tasks by priority
-  const lowPriorityTasks = tasks.filter(t => t.priority === 'low').length;
-  const mediumPriorityTasks = tasks.filter(t => t.priority === 'medium').length;
+//   // Tasks by priority
+//   const lowPriorityTasks = tasks.filter(t => t.priority === 'low').length;
+//   const mediumPriorityTasks = tasks.filter(t => t.priority === 'medium').length;
 
-  res.json({
-    success: true,
-    stats: {
-      totalTasks,
-      completedTasks,
-      pendingTasks,
-      highPriorityTasks,
-      overdueTasks,
-      completionRate: totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0,
-      tasksByStatus: {
-        todo: todoTasks,
-        inProgress: inProgressTasks,
-        completed: completedStatusTasks
-      },
-      tasksByPriority: {
-        low: lowPriorityTasks,
-        medium: mediumPriorityTasks,
-        high: highPriorityTasks
+//   res.json({
+//     success: true,
+//     stats: {
+//       totalTasks,
+//       completedTasks,
+//       pendingTasks,
+//       highPriorityTasks,
+//       overdueTasks,
+//       completionRate: totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0,
+//       tasksByStatus: {
+//         todo: todoTasks,
+//         inProgress: inProgressTasks,
+//         completed: completedStatusTasks
+//       },
+//       tasksByPriority: {
+//         low: lowPriorityTasks,
+//         medium: mediumPriorityTasks,
+//         high: highPriorityTasks
+//       }
+//     }
+//   });
+// });
+app.get('/api/tasks/stats', async (req, res) => {
+  try {
+    const totalTasks = await Task.countDocuments();
+    const completedTasks = await Task.countDocuments({ completed: true });
+    const pendingTasks = totalTasks - completedTasks;
+    const highPriorityTasks = await Task.countDocuments({ priority: "high" });
+    const overdueTasks = await Task.countDocuments({ 
+      dueDate: { $lt: new Date() }, 
+      completed: false 
+    });
+    const todoTasks = await Task.countDocuments({ status: "todo" });
+    const inProgressTasks = await Task.countDocuments({ status: "in-progress" });
+    const completedStatusTasks = await Task.countDocuments({ status: "completed" });
+    const lowPriorityTasks = await Task.countDocuments({ priority: "low" });
+    const mediumPriorityTasks = await Task.countDocuments({ priority: "medium" });
+
+    res.json({
+      success: true,
+      stats: {
+        totalTasks,
+        completedTasks,
+        pendingTasks,
+        highPriorityTasks,
+        overdueTasks,
+        completionRate: totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0,
+        tasksByStatus: {
+          todo: todoTasks,
+          inProgress: inProgressTasks,
+          completed: completedStatusTasks
+        },
+        tasksByPriority: {
+          low: lowPriorityTasks,
+          medium: mediumPriorityTasks,
+          high: highPriorityTasks
+        }
       }
-    }
-  });
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error fetching stats' });
+  }
 });
 
-app.get('/api/tasks', (req, res) => {
-  const { 
-    priority, 
-    status, 
-    completed, 
-    search, 
-    sortBy = 'createdAt', 
-    sortOrder = 'desc',
-    page = 1,
-    limit = 10 
-  } = req.query;
 
-  let filteredTasks = [...tasks];
 
-  // Apply filters
-  if (priority) filteredTasks = filteredTasks.filter(task => task.priority === priority);
-  if (status) filteredTasks = filteredTasks.filter(task => task.status === status);
-  if (completed !== undefined) filteredTasks = filteredTasks.filter(task => task.completed === (completed === 'true'));
-  if (search) {
-    const searchLower = search.toLowerCase();
-    filteredTasks = filteredTasks.filter(task => 
-      task.title.toLowerCase().includes(searchLower) ||
-      task.description?.toLowerCase().includes(searchLower) ||
-      task.tags.some(tag => tag.toLowerCase().includes(searchLower))
-    );
-  }
+app.get('/api/tasks', async (req, res) => {
+  try {
+    // Query parameters
+    const { 
+      priority, 
+      status, 
+      completed, 
+      search, 
+      sortBy = 'createdAt', 
+      sortOrder = 'desc',
+      page = 1,
+      limit = 10 
+    } = req.query;
 
-  // Apply sorting
-  filteredTasks.sort((a, b) => {
-    let aValue, bValue;
-    
-    switch (sortBy) {
-      case 'priority':
-        const priorityOrder = { high: 3, medium: 2, low: 1 };
-        aValue = priorityOrder[a.priority];
-        bValue = priorityOrder[b.priority];
-        break;
-      case 'dueDate':
-        aValue = a.dueDate ? new Date(a.dueDate).getTime() : 0;
-        bValue = b.dueDate ? new Date(b.dueDate).getTime() : 0;
-        break;
-      case 'title':
-        aValue = a.title.toLowerCase();
-        bValue = b.title.toLowerCase();
-        break;
-      case 'createdAt':
-      default:
-        aValue = new Date(a.createdAt).getTime();
-        bValue = new Date(b.createdAt).getTime();
-        break;
+    // Build Mongo query filters
+    const filter = {};
+    if (priority) filter.priority = priority;
+    if (status) filter.status = status;
+    if (completed !== undefined) filter.completed = completed === 'true';
+    if (search) {
+      const searchRegex = new RegExp(search, 'i');
+      filter.$or = [
+        { title: searchRegex },
+        { description: searchRegex },
+        { tags: { $regex: searchRegex } }
+      ];
     }
 
-    if (sortOrder === 'desc') {
-      return bValue > aValue ? 1 : bValue < aValue ? -1 : 0;
+    // Mongo sort object
+    let sortObj = {};
+    if (sortBy === 'priority') {
+      // Custom order: high > medium > low
+      sortObj = { priority: sortOrder === 'desc' ? -1 : 1 };
     } else {
-      return aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
+      sortObj[sortBy] = sortOrder === 'desc' ? -1 : 1;
     }
-  });
 
-  // Apply pagination
-  const startIndex = (parseInt(page) - 1) * parseInt(limit);
-  const endIndex = startIndex + parseInt(limit);
-  const paginatedTasks = filteredTasks.slice(startIndex, endIndex);
+    // Pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit);
 
-  res.json({
-    success: true,
-    tasks: paginatedTasks,
-    pagination: {
-      currentPage: parseInt(page),
-      totalPages: Math.ceil(filteredTasks.length / parseInt(limit)),
-      totalTasks: filteredTasks.length,
-      hasNext: endIndex < filteredTasks.length,
-      hasPrev: parseInt(page) > 1
-    }
-  });
-});
+    // Get total count for pagination
+    const totalTasks = await Task.countDocuments(filter);
 
-app.get('/api/tasks/:id', (req, res) => {
-  const task = tasks.find(t => t._id === req.params.id);
-  if (!task) {
-    return res.status(404).json({ success: false, message: 'Task not found' });
+    // Find tasks with filters, sorting, and pagination
+    const tasks = await Task.find(filter)
+      .sort(sortObj)
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    res.json({
+      success: true,
+      tasks,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(totalTasks / parseInt(limit)),
+        totalTasks,
+        hasNext: skip + tasks.length < totalTasks,
+        hasPrev: parseInt(page) > 1
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching tasks:', error);
+    res.status(500).json({ success: false, message: 'Error fetching tasks' });
   }
-  res.json({ success: true, task });
 });
 
-app.post('/api/tasks', (req, res) => {
-  const newTask = {
-    _id: String(nextTaskId++),
-    title: req.body.title,
-    description: req.body.description || '',
-    priority: req.body.priority || 'medium',
-    status: req.body.status || 'todo',
-    completed: req.body.completed || false,
-    dueDate: req.body.dueDate || null,
-    tags: req.body.tags || [],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  };
 
-  tasks.push(newTask);
-  console.log('Task created:', newTask);
-  res.status(201).json({ success: true, task: newTask });
-});
-
-app.put('/api/tasks/:id', (req, res) => {
-  const taskIndex = tasks.findIndex(t => t._id === req.params.id);
-  if (taskIndex === -1) {
-    return res.status(404).json({ success: false, message: 'Task not found' });
+// app.get('/api/tasks/:id', (req, res) => {
+//   const task = tasks.find(t => t._id === req.params.id);
+//   if (!task) {
+//     return res.status(404).json({ success: false, message: 'Task not found' });
+//   }
+//   res.json({ success: true, task });
+// });
+app.get('/api/tasks/:id', async (req, res) => {
+  try {
+    const task = await Task.findById(req.params.id);
+    if (!task) return res.status(404).json({ success: false, message: 'Task not found' });
+    res.json({ success: true, task });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error fetching task' });
   }
-
-  tasks[taskIndex] = {
-    ...tasks[taskIndex],
-    ...req.body,
-    updatedAt: new Date().toISOString()
-  };
-
-  console.log('Task updated:', tasks[taskIndex]);
-  res.json({ success: true, task: tasks[taskIndex] });
 });
 
-app.delete('/api/tasks/:id', (req, res) => {
-  const taskIndex = tasks.findIndex(t => t._id === req.params.id);
-  if (taskIndex === -1) {
-    return res.status(404).json({ success: false, message: 'Task not found' });
+
+// app.post('/api/tasks', (req, res) => {
+//   const newTask = {
+//     _id: String(nextTaskId++),
+//     title: req.body.title,
+//     description: req.body.description || '',
+//     priority: req.body.priority || 'medium',
+//     status: req.body.status || 'todo',
+//     completed: req.body.completed || false,
+//     dueDate: req.body.dueDate || null,
+//     tags: req.body.tags || [],
+//     createdAt: new Date().toISOString(),
+//     updatedAt: new Date().toISOString()
+//   };
+
+//   tasks.push(newTask);
+//   console.log('Task created:', newTask);
+//   res.status(201).json({ success: true, task: newTask });
+// });
+
+app.post('/api/tasks', async (req, res) => {
+  try {
+    const newTask = await Task.create(req.body);
+    res.status(201).json({ success: true, task: newTask });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error creating task', error: error.message });
   }
-
-  const deletedTask = tasks.splice(taskIndex, 1)[0];
-  console.log('Task deleted:', deletedTask);
-  res.json({ success: true, message: 'Task deleted successfully' });
 });
+
+
+// app.put('/api/tasks/:id', (req, res) => {
+//   const taskIndex = tasks.findIndex(t => t._id === req.params.id);
+//   if (taskIndex === -1) {
+//     return res.status(404).json({ success: false, message: 'Task not found' });
+//   }
+
+//   tasks[taskIndex] = {
+//     ...tasks[taskIndex],
+//     ...req.body,
+//     updatedAt: new Date().toISOString()
+//   };
+
+//   console.log('Task updated:', tasks[taskIndex]);
+//   res.json({ success: true, task: tasks[taskIndex] });
+// });
+app.put('/api/tasks/:id', async (req, res) => {
+  try {
+    const updatedTask = await Task.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!updatedTask) return res.status(404).json({ success: false, message: 'Task not found' });
+    res.json({ success: true, task: updatedTask });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error updating task' });
+  }
+});
+
+
+// app.delete('/api/tasks/:id', (req, res) => {
+//   const taskIndex = tasks.findIndex(t => t._id === req.params.id);
+//   if (taskIndex === -1) {
+//     return res.status(404).json({ success: false, message: 'Task not found' });
+//   }
+
+//   const deletedTask = tasks.splice(taskIndex, 1)[0];
+//   console.log('Task deleted:', deletedTask);
+//   res.json({ success: true, message: 'Task deleted successfully' });
+// });
+
+app.delete('/api/tasks/:id', async (req, res) => {
+  try {
+    const deletedTask = await Task.findByIdAndDelete(req.params.id);
+    if (!deletedTask) return res.status(404).json({ success: false, message: 'Task not found' });
+    res.json({ success: true, message: 'Task deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error deleting task' });
+  }
+});
+
 
 
 
