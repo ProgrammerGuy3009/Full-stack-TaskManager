@@ -27,6 +27,7 @@ export default function TaskModal({ isOpen, onClose, onSubmit, task }: TaskModal
     status: 'todo',
     dueDate: '',
     tags: []
+    completed: false
   });
   const [tagInput, setTagInput] = useState('');
 
@@ -35,6 +36,7 @@ export default function TaskModal({ isOpen, onClose, onSubmit, task }: TaskModal
       setFormData({
         ...task,
         dueDate: task.dueDate ? task.dueDate.split('T')[0] : '' // Format date for input
+        completed: typeof task.completed === 'boolean' ? task.completed : false
       });
     } else {
       setFormData({
