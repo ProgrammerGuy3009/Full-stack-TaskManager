@@ -131,7 +131,7 @@ export default function TasksPage() {
   };
 
   // const handleModalSubmit = async (taskData: any) => {
-  const handleModalSubmit = (taskData: Omit<Task, "id" | "createdAt">) => {
+  const handleModalSubmit = (taskData: Omit<Task, "_id" | "createdAt">) => {
     if (editingTask) {
       handleEditTask({ ...editingTask, ...taskData });
     } else {
