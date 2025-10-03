@@ -6,11 +6,10 @@ const User = require('./models/User');
 const Task = require('./models/Task');
 require('dotenv').config();
 
-// mongoose.connect(process.env.MONGO_URI, {
-//   useNewUrlParser: true,
-//   useUnifiedTopology: true
-// })
-mongoose.connect(process.env.MONGO_URI)
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+})
 .then(() => console.log('Connected to MongoDB Atlas!'))
 .catch(err => console.error('MongoDB connection error:', err));
 
@@ -20,146 +19,66 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// In-memory storage for tasks (simulating database)
-// let tasks = [
-//   {
-//     _id: '1',
-//     title: 'Complete Project Documentation',
-//     description: 'Write comprehensive documentation for the task management system',
-//     priority: 'high',
-//     status: 'in-progress',
-//     completed: false,
-//     dueDate: '2025-10-05',
-//     tags: ['documentation', 'project'],
-//     createdAt: new Date().toISOString(),
-//     updatedAt: new Date().toISOString()
-//   },
-//   {
-//     _id: '2',
-//     title: 'Design Database Schema',
-//     description: 'Create the database schema for tasks and users',
-//     priority: 'medium',
-//     status: 'completed',
-//     completed: true,
-//     dueDate: '2025-10-03',
-//     tags: ['database', 'design'],
-//     createdAt: new Date(Date.now() - 86400000).toISOString(),
-//     updatedAt: new Date().toISOString()
-//   }
-// ];
-
-// let nextTaskId = 3;
-
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Server is running' });
 });
 
-// Auth routes
-// app.post('/api/auth/register', (req, res) => {
-//   console.log('Registration request received:', req.body);
-//   res.json({
-//     success: true,
-//     message: 'Registration successful',
-//     user: { id: 1, username: req.body.username, email: req.body.email },
-//     token: 'test-token-123'
-//   });
-// });
+
+
 app.post('/api/auth/register', async (req, res) => {
   try {
     const { username, email, password } = req.body;
-    
-    // Input validation
     if (!username || !email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: 'Username, email, and password are required'
-      });
+      return res.status(400).json({ success: false, message: "All fields are required" });
     }
-    
     if (password.length < 6) {
-      return res.status(400).json({
-        success: false,
-        message: 'Password must be at least 6 characters long'
-      });
+      return res.status(400).json({ success: false, message: "Password must be at least 6 characters" });
     }
-    
-    // Hash password
+    // Check if user exists
+    const existing = await User.findOne({ $or: [{ email }, { username }] });
+    if (existing) {
+      return res.status(409).json({ success: false, message: "User already exists" });
+    }
     const hashedPassword = await bcrypt.hash(password, 10);
-    
-    console.log('Registration request:', { username, email, hashedPassword: 'HASHED' });
-    
+    const user = await User.create({ username, email, password: hashedPassword });
     res.json({
       success: true,
       message: 'Registration successful',
-      user: { id: 1, username, email },
+      user: { id: user._id, username: user.username, email: user.email },
       token: 'jwt-token-' + Date.now()
     });
   } catch (error) {
-    console.error('Registration error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Registration failed. Please try again.' 
-    });
+    res.status(500).json({ success: false, message: "Server error. " + error.message });
   }
 });
-
-
-// app.post('/api/auth/login', (req, res) => {
-//   console.log('Login request received:', req.body);
-//   res.json({
-//     success: true,
-//     message: 'Login successful',
-//     user: { id: 1, username: 'testuser', email: req.body.email },
-//     token: 'test-token-123'
-//   });
-// });
 
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
-    
-    // Input validation
     if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email and password are required'
-      });
+      return res.status(400).json({ success: false, message: "All fields are required" });
     }
-    
-    // In a real app, you would:
-    // 1. Find user by email in database
-    // 2. Compare password with hashed password using bcrypt.compare()
-    // For demo purposes, we'll simulate this:
-    
-    console.log('Login request for:', email);
-    
-    // Simulate password verification
-    // const isValidPassword = await bcrypt.compare(password, storedHashedPassword);
-    
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ success: false, message: "Invalid credentials" });
+    }
     res.json({
       success: true,
       message: 'Login successful',
-      user: { id: 1, username: 'testuser', email },
+      user: { id: user._id, username: user.username, email: user.email },
       token: 'jwt-token-' + Date.now()
     });
   } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Login failed. Please try again.' 
-    });
+    res.status(500).json({ success: false, message: "Server error. " + error.message });
   }
 });
 
 
-// app.get('/api/auth/verify', (req, res) => {
-//   res.json({
-//     success: true,
-//     message: 'Token verified',
-//     user: { id: 1, username: 'testuser', email: 'test@example.com' }
-//   });
-// });
 app.get('/api/auth/verify', (req, res) => {
   try {
     // In a real app, you would verify the JWT token here
@@ -187,52 +106,6 @@ app.get('/api/auth/verify', (req, res) => {
   }
 });
 
-
-// Task routes with full CRUD operations
-// app.get('/api/tasks/stats', (req, res) => {
-//   const totalTasks = tasks.length;
-//   const completedTasks = tasks.filter(t => t.completed).length;
-//   const pendingTasks = totalTasks - completedTasks;
-//   const highPriorityTasks = tasks.filter(t => t.priority === 'high').length;
-  
-//   // Calculate overdue tasks
-//   const overdueTasks = tasks.filter(t => 
-//     t.dueDate && 
-//     new Date(t.dueDate) < new Date() && 
-//     !t.completed
-//   ).length;
-
-//   // Tasks by status
-//   const todoTasks = tasks.filter(t => t.status === 'todo').length;
-//   const inProgressTasks = tasks.filter(t => t.status === 'in-progress').length;
-//   const completedStatusTasks = tasks.filter(t => t.status === 'completed').length;
-
-//   // Tasks by priority
-//   const lowPriorityTasks = tasks.filter(t => t.priority === 'low').length;
-//   const mediumPriorityTasks = tasks.filter(t => t.priority === 'medium').length;
-
-//   res.json({
-//     success: true,
-//     stats: {
-//       totalTasks,
-//       completedTasks,
-//       pendingTasks,
-//       highPriorityTasks,
-//       overdueTasks,
-//       completionRate: totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0,
-//       tasksByStatus: {
-//         todo: todoTasks,
-//         inProgress: inProgressTasks,
-//         completed: completedStatusTasks
-//       },
-//       tasksByPriority: {
-//         low: lowPriorityTasks,
-//         medium: mediumPriorityTasks,
-//         high: highPriorityTasks
-//       }
-//     }
-//   });
-// });
 app.get('/api/tasks/stats', async (req, res) => {
   try {
     const totalTasks = await Task.countDocuments();
@@ -344,13 +217,6 @@ app.get('/api/tasks', async (req, res) => {
 });
 
 
-// app.get('/api/tasks/:id', (req, res) => {
-//   const task = tasks.find(t => t._id === req.params.id);
-//   if (!task) {
-//     return res.status(404).json({ success: false, message: 'Task not found' });
-//   }
-//   res.json({ success: true, task });
-// });
 app.get('/api/tasks/:id', async (req, res) => {
   try {
     const task = await Task.findById(req.params.id);
@@ -362,24 +228,6 @@ app.get('/api/tasks/:id', async (req, res) => {
 });
 
 
-// app.post('/api/tasks', (req, res) => {
-//   const newTask = {
-//     _id: String(nextTaskId++),
-//     title: req.body.title,
-//     description: req.body.description || '',
-//     priority: req.body.priority || 'medium',
-//     status: req.body.status || 'todo',
-//     completed: req.body.completed || false,
-//     dueDate: req.body.dueDate || null,
-//     tags: req.body.tags || [],
-//     createdAt: new Date().toISOString(),
-//     updatedAt: new Date().toISOString()
-//   };
-
-//   tasks.push(newTask);
-//   console.log('Task created:', newTask);
-//   res.status(201).json({ success: true, task: newTask });
-// });
 
 app.post('/api/tasks', async (req, res) => {
   try {
@@ -391,21 +239,6 @@ app.post('/api/tasks', async (req, res) => {
 });
 
 
-// app.put('/api/tasks/:id', (req, res) => {
-//   const taskIndex = tasks.findIndex(t => t._id === req.params.id);
-//   if (taskIndex === -1) {
-//     return res.status(404).json({ success: false, message: 'Task not found' });
-//   }
-
-//   tasks[taskIndex] = {
-//     ...tasks[taskIndex],
-//     ...req.body,
-//     updatedAt: new Date().toISOString()
-//   };
-
-//   console.log('Task updated:', tasks[taskIndex]);
-//   res.json({ success: true, task: tasks[taskIndex] });
-// });
 app.put('/api/tasks/:id', async (req, res) => {
   try {
     const updatedTask = await Task.findByIdAndUpdate(req.params.id, req.body, { new: true });
@@ -417,17 +250,6 @@ app.put('/api/tasks/:id', async (req, res) => {
 });
 
 
-// app.delete('/api/tasks/:id', (req, res) => {
-//   const taskIndex = tasks.findIndex(t => t._id === req.params.id);
-//   if (taskIndex === -1) {
-//     return res.status(404).json({ success: false, message: 'Task not found' });
-//   }
-
-//   const deletedTask = tasks.splice(taskIndex, 1)[0];
-//   console.log('Task deleted:', deletedTask);
-//   res.json({ success: true, message: 'Task deleted successfully' });
-// });
-
 app.delete('/api/tasks/:id', async (req, res) => {
   try {
     const deletedTask = await Task.findByIdAndDelete(req.params.id);
@@ -438,34 +260,6 @@ app.delete('/api/tasks/:id', async (req, res) => {
   }
 });
 
-
-
-
-// User dashboard with recent tasks and activity
-// app.get('/api/users/dashboard', (req, res) => {
-//   const recentTasks = tasks
-//     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-//     .slice(0, 5);
-
-//   const upcomingTasks = tasks
-//     .filter(t => t.dueDate && new Date(t.dueDate) > new Date() && !t.completed)
-//     .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
-//     .slice(0, 3);
-
-//   res.json({
-//     success: true,
-//     data: {
-//       user: { id: 1, username: 'testuser', email: 'test@example.com' },
-//       recentTasks,
-//       upcomingTasks,
-//       totalTasks: tasks.length,
-//       completedToday: tasks.filter(t => {
-//         const today = new Date().toDateString();
-//         return t.completed && new Date(t.updatedAt).toDateString() === today;
-//       }).length
-//     }
-//   });
-// });
 app.get('/api/users/dashboard', async (req, res) => {
   try {
     const recentTasks = await Task.find().sort({ updatedAt: -1 }).limit(5);
@@ -499,38 +293,6 @@ app.get('/api/users/dashboard', async (req, res) => {
   }
 });
 
-
-// Bulk operations
-// app.post('/api/tasks/bulk', (req, res) => {
-//   const { action, taskIds } = req.body;
-
-//   switch (action) {
-//     case 'complete':
-//       tasks.forEach(task => {
-//         if (taskIds.includes(task._id)) {
-//           task.completed = true;
-//           task.status = 'completed';
-//           task.updatedAt = new Date().toISOString();
-//         }
-//       });
-//       break;
-//     case 'delete':
-//       tasks = tasks.filter(task => !taskIds.includes(task._id));
-//       break;
-//     case 'archive':
-//       tasks.forEach(task => {
-//         if (taskIds.includes(task._id)) {
-//           task.archived = true;
-//           task.updatedAt = new Date().toISOString();
-//         }
-//       });
-//       break;
-//     default:
-//       return res.status(400).json({ success: false, message: 'Invalid bulk action' });
-//   }
-
-//   res.json({ success: true, message: `Bulk ${action} completed` });
-// });
 app.post('/api/tasks/bulk', async (req, res) => {
   const { action, taskIds } = req.body;
 
@@ -564,12 +326,8 @@ app.use((req, res) => {
   res.status(404).json({ success: false, message: `Route ${req.originalUrl} not found` });
 });
 const PORT = 5000;
-const healthUrl =
-  process.env.NODE_ENV === "production"
-    ? "https://full-stack-taskmanager-production.up.railway.app/api/health"
-    : "http://localhost:5000/api/health";
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📍 Health check: ${healthUrl}`);
+  console.log(`📍 Health check: http://localhost:${PORT}/api/health`);
   // console.log(`📊 Total tasks loaded: ${tasks.length}`);
 });
