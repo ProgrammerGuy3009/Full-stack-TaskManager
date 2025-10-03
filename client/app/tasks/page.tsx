@@ -131,15 +131,24 @@ export default function TasksPage() {
   };
 
   // const handleModalSubmit = async (taskData: any) => {
-  const handleModalSubmit = async (taskData: Omit<Task, "id" | "createdAt"> | Task) => {
+  const handleModalSubmit = (taskData: Omit<Task, "id" | "createdAt">) => {
     if (editingTask) {
-      // await handleEditTask({ ...taskData, _id: editingTask._id });
-      await handleEditTask({    ...taskData,    _id: editingTask._id,    createdAt: editingTask.createdAt  });
-      
+      handleEditTask({ ...editingTask, ...taskData });
     } else {
-      await handleCreateTask(taskData);
+      handleCreateTask(taskData);
     }
+    closeModal();
   };
+
+  // const handleModalSubmit = async (taskData: Omit<Task, "id" | "createdAt"> | Task) => {
+  //   if (editingTask) {
+  //     // await handleEditTask({ ...taskData, _id: editingTask._id });
+  //     await handleEditTask({    ...taskData,    _id: editingTask._id,    createdAt: editingTask.createdAt  });
+      
+  //   } else {
+  //     await handleCreateTask(taskData);
+  //   }
+  // };
 
   if (isLoading) {
     return (
