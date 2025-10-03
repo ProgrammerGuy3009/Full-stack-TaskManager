@@ -46,7 +46,8 @@ export default function TaskModal({ isOpen, onClose, onSubmit, task }: TaskModal
         priority: 'medium',
         status: 'todo',
         dueDate: '',
-        tags: []
+        tags: [],
+        completed: false
       });
     }
   }, [task, isOpen]);
