@@ -1,5 +1,5 @@
 // API Base URL
-const API_BASE_URL = 'NEXT_PUBLIC_API_URL';
+const API_BASE_URL = NEXT_PUBLIC_API_URL;
 
 // Simple fetch wrapper for API calls
 const apiCall = async (endpoint: string, options: RequestInit = {}) => {
