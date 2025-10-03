@@ -1,18 +1,10 @@
-// 'use client';
-
-// import { useEffect, useState } from 'react';
-// import { useRouter } from 'next/navigation';
-// import { useAuth } from '@/context/AuthContext';
-// import { taskApi, userApi } from '@/utils/api';
-
 'use client';
-
+import TaskModal from "@/components/TaskModal";
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { taskApi, userApi } from '@/utils/api';
 import Navbar from '@/components/Navbar';
-
 
 interface Task {
   _id: string;
@@ -76,6 +68,29 @@ export default function DashboardPage() {
   //   logout();
   //   router.push('/login');
   // };
+  const [showTaskModal, setShowTaskModal] = useState(false);
+  // const handleCreateTask = async (data) => {
+  const handleCreateTask = async (data: { title: string; priority: 'low' | 'medium' | 'high'; status: 'todo' | 'in-progress' | 'completed' }) => {
+    try {
+      const res = await fetch("/api/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+      if (res.ok) {
+        setShowTaskModal(false);
+        fetchDashboardData(); // refresh tasks without reloading
+      } else {
+        alert("Failed to create task!");
+      }
+    } catch (err) {
+      if (err instanceof Error) {
+        alert("Network error: " + err.message);
+      } else {
+        alert("An unknown error occurred.");
+      }
+    }
+  };
 
   if (isLoading || !user) {
     return (
@@ -222,10 +237,13 @@ export default function DashboardPage() {
                 ) : (
                   <div style={{ textAlign: 'center', padding: '40px' }}>
                     <p style={{ color: '#9ca3af', marginBottom: '15px' }}>No tasks yet. Create your first task!</p>
-                    <button
+                    {/* <button
                       onClick={() => alert('Task creation feature coming soon!')}
                       className="btn-primary"
                     >
+                      Create Task
+                    </button> */}
+                    <button onClick={() => setShowTaskModal(true)} className="btn-primary">
                       Create Task
                     </button>
                   </div>
@@ -235,6 +253,12 @@ export default function DashboardPage() {
           </>
         )}
       </main>
+      <TaskModal
+        isOpen={showTaskModal}
+        onClose={() => setShowTaskModal(false)}
+        onSubmit={handleCreateTask}
+        task={null}
+      />
     </div>
   );
 }
