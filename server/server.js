@@ -237,6 +237,7 @@ app.get('/api/tasks/:id', async (req, res) => {
 app.post('/api/tasks', async (req, res) => {
   try {
     const { title, description, priority, dueDate, status, tags } = req.body;
+    console.log('BODY:', req.body);
     if (!title) return res.status(400).json({ success: false, message: "Title is required" });
     const newTask = await Task.create({
       title,
