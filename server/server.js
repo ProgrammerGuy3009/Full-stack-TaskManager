@@ -6,10 +6,7 @@ const User = require('./models/User');
 const Task = require('./models/Task');
 require('dotenv').config();
 
-mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
+mongoose.connect(process.env.MONGO_URI)
 .then(() => console.log('Connected to MongoDB Atlas!'))
 .catch(err => console.error('MongoDB connection error:', err));
 
@@ -229,12 +226,32 @@ app.get('/api/tasks/:id', async (req, res) => {
 
 
 
+// app.post('/api/tasks', async (req, res) => {
+//   try {
+//     const newTask = await Task.create(req.body);
+//     res.status(201).json({ success: true, task: newTask });
+//   } catch (error) {
+//     res.status(500).json({ success: false, message: 'Error creating task', error: error.message });
+//   }
+// });
 app.post('/api/tasks', async (req, res) => {
   try {
-    const newTask = await Task.create(req.body);
+    const { title, description, priority, dueDate, status, tags } = req.body;
+    if (!title) return res.status(400).json({ success: false, message: "Title is required" });
+    const newTask = await Task.create({
+      title,
+      description: description || "",
+      priority: priority || "medium",
+      dueDate: dueDate || null,
+      status: status || "todo",
+      tags: tags || [],
+      completed: false,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
     res.status(201).json({ success: true, task: newTask });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Error creating task', error: error.message });
+    res.status(500).json({ success: false, message: "Error creating task", error: error.message });
   }
 });
 
