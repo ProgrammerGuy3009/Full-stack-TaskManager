@@ -13,7 +13,14 @@ mongoose.connect(process.env.MONGO_URI)
 const app = express();
 
 // Basic middleware
-app.use(cors());
+app.use(cors({
+  origin: [
+    'http://localhost:3000',
+    'https://full-stack-task-manager-mauve.vercel.app'
+  ],
+  credentials: true
+}));
+
 app.use(express.json());
 
 // Health check
