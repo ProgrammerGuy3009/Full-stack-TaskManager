@@ -441,71 +441,130 @@ app.delete('/api/tasks/:id', async (req, res) => {
 
 
 // User dashboard with recent tasks and activity
-app.get('/api/users/dashboard', (req, res) => {
-  const recentTasks = tasks
-    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-    .slice(0, 5);
+// app.get('/api/users/dashboard', (req, res) => {
+//   const recentTasks = tasks
+//     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+//     .slice(0, 5);
 
-  const upcomingTasks = tasks
-    .filter(t => t.dueDate && new Date(t.dueDate) > new Date() && !t.completed)
-    .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
-    .slice(0, 3);
+//   const upcomingTasks = tasks
+//     .filter(t => t.dueDate && new Date(t.dueDate) > new Date() && !t.completed)
+//     .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
+//     .slice(0, 3);
 
-  res.json({
-    success: true,
-    data: {
-      user: { id: 1, username: 'testuser', email: 'test@example.com' },
-      recentTasks,
-      upcomingTasks,
-      totalTasks: tasks.length,
-      completedToday: tasks.filter(t => {
-        const today = new Date().toDateString();
-        return t.completed && new Date(t.updatedAt).toDateString() === today;
-      }).length
-    }
-  });
+//   res.json({
+//     success: true,
+//     data: {
+//       user: { id: 1, username: 'testuser', email: 'test@example.com' },
+//       recentTasks,
+//       upcomingTasks,
+//       totalTasks: tasks.length,
+//       completedToday: tasks.filter(t => {
+//         const today = new Date().toDateString();
+//         return t.completed && new Date(t.updatedAt).toDateString() === today;
+//       }).length
+//     }
+//   });
+// });
+app.get('/api/users/dashboard', async (req, res) => {
+  try {
+    const recentTasks = await Task.find().sort({ updatedAt: -1 }).limit(5);
+    const upcomingTasks = await Task.find({
+      dueDate: { $gt: new Date() },
+      completed: false
+    }).sort({ dueDate: 1 }).limit(3);
+
+    const totalTasks = await Task.countDocuments();
+    const today = new Date().toDateString();
+    const completedToday = await Task.countDocuments({
+      completed: true,
+      updatedAt: {
+        $gte: new Date(today),
+        $lt: new Date(new Date(today).getTime() + 24 * 60 * 60 * 1000)
+      }
+    });
+
+    res.json({
+      success: true,
+      data: {
+        user: { id: 1, username: 'testuser', email: 'test@example.com' },
+        recentTasks,
+        upcomingTasks,
+        totalTasks,
+        completedToday
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Dashboard error" });
+  }
 });
+
 
 // Bulk operations
-app.post('/api/tasks/bulk', (req, res) => {
+// app.post('/api/tasks/bulk', (req, res) => {
+//   const { action, taskIds } = req.body;
+
+//   switch (action) {
+//     case 'complete':
+//       tasks.forEach(task => {
+//         if (taskIds.includes(task._id)) {
+//           task.completed = true;
+//           task.status = 'completed';
+//           task.updatedAt = new Date().toISOString();
+//         }
+//       });
+//       break;
+//     case 'delete':
+//       tasks = tasks.filter(task => !taskIds.includes(task._id));
+//       break;
+//     case 'archive':
+//       tasks.forEach(task => {
+//         if (taskIds.includes(task._id)) {
+//           task.archived = true;
+//           task.updatedAt = new Date().toISOString();
+//         }
+//       });
+//       break;
+//     default:
+//       return res.status(400).json({ success: false, message: 'Invalid bulk action' });
+//   }
+
+//   res.json({ success: true, message: `Bulk ${action} completed` });
+// });
+app.post('/api/tasks/bulk', async (req, res) => {
   const { action, taskIds } = req.body;
 
-  switch (action) {
-    case 'complete':
-      tasks.forEach(task => {
-        if (taskIds.includes(task._id)) {
-          task.completed = true;
-          task.status = 'completed';
-          task.updatedAt = new Date().toISOString();
-        }
-      });
-      break;
-    case 'delete':
-      tasks = tasks.filter(task => !taskIds.includes(task._id));
-      break;
-    case 'archive':
-      tasks.forEach(task => {
-        if (taskIds.includes(task._id)) {
-          task.archived = true;
-          task.updatedAt = new Date().toISOString();
-        }
-      });
-      break;
-    default:
-      return res.status(400).json({ success: false, message: 'Invalid bulk action' });
+  try {
+    switch (action) {
+      case 'complete':
+        await Task.updateMany(
+          { _id: { $in: taskIds } },
+          { $set: { completed: true, status: 'completed', updatedAt: new Date() } }
+        );
+        break;
+      case 'delete':
+        await Task.deleteMany({ _id: { $in: taskIds } });
+        break;
+      case 'archive':
+        await Task.updateMany(
+          { _id: { $in: taskIds } },
+          { $set: { archived: true, updatedAt: new Date() } }
+        );
+        break;
+      default:
+        return res.status(400).json({ success: false, message: 'Invalid bulk action' });
+    }
+    res.json({ success: true, message: `Bulk ${action} completed` });
+  } catch (error) {
+    res.status(500).json({ success: false, message: `Bulk ${action} failed: ${error.message}` });
   }
-
-  res.json({ success: true, message: `Bulk ${action} completed` });
 });
-
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({ success: false, message: `Route ${req.originalUrl} not found` });
 });
-
 const PORT = 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📍 Health check: http://localhost:${PORT}/api/health`);
-  console.log(`📊 Total tasks loaded: ${tasks.length}`);
+  // console.log(`📊 Total tasks loaded: ${tasks.length}`);
 });
