@@ -32,7 +32,8 @@ This project was developed as a **scalable web application with authentication &
 | <img width="1889" height="862" alt="image" src="https://github.com/user-attachments/assets/2f16be8d-57c7-459c-b07a-a524b13325ac" />|
 
 | Login |
- | <img width="1909" height="857" alt="image" src="https://github.com/user-attachments/assets/832ea7e6-335f-40d3-b3bc-1542a8598968" />|
+|-------------|
+|<img width="1909" height="857" alt="image" src="https://github.com/user-attachments/assets/832ea7e6-335f-40d3-b3bc-1542a8598968" />|
 
 ### 📊 Dashboard Analytics
 *Real-time task statistics and productivity insights*
