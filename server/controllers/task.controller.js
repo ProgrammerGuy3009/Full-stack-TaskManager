@@ -115,7 +115,8 @@ const createTask = async (req, res) => {
   try {
     const taskData = {
       ...req.body,
-      user: req.user._id
+      // user: req.user._id
+      user: req.body.user
     };
 
     const task = await Task.create(taskData);
