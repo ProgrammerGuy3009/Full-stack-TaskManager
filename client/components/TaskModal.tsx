@@ -10,6 +10,7 @@ interface Task {
   status: 'todo' | 'in-progress' | 'completed';
   dueDate?: string;
   tags: string[];
+  completed: boolean;
 }
 
 interface TaskModalProps {
