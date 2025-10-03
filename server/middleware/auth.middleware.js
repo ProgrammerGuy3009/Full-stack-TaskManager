@@ -29,7 +29,8 @@ const authMiddleware = async (req, res, next) => {
       });
     }
 
-    req.user = user;
+    // req.user = user;
+    req.user = { id: user._id };
     next();
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
