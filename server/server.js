@@ -326,8 +326,12 @@ app.use((req, res) => {
   res.status(404).json({ success: false, message: `Route ${req.originalUrl} not found` });
 });
 const PORT = 5000;
+const healthUrl =
+  process.env.NODE_ENV === "production"
+    ? "https://full-stack-taskmanager-production.up.railway.app/api/health"
+    : "http://localhost:5000/api/health";
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📍 Health check: http://localhost:${PORT}/api/health`);
+  console.log(`📍 Health check: ${healthUrl}`);
   // console.log(`📊 Total tasks loaded: ${tasks.length}`);
 });
