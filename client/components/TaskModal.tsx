@@ -16,7 +16,8 @@ interface Task {
 interface TaskModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (task: Task) => void;
+  // onSubmit: (task: Task) => void;
+    onSubmit: (task: Omit<Task, '_id' | 'createdAt'>) => void;
   task?: Task | null;
 }
 
