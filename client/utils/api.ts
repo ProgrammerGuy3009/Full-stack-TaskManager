@@ -5,13 +5,14 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 const apiCall = async (endpoint: string, options: RequestInit = {}) => {
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
 
-  // Build headers: always send Content-Type, add Authorization only if token exists
-  const headers: Record<string, string> = {
+  // Fix the type issue with explicit type annotation
+  const headers: HeadersInit = {
     'Content-Type': 'application/json',
     ...options.headers,
   };
+
   if (token && token.trim() !== '') {
-    headers.Authorization = `Bearer ${token}`;
+    (headers as Record<string, string>).Authorization = `Bearer ${token}`;
   }
 
   const config: RequestInit = {
@@ -72,6 +73,7 @@ export const taskApi = {
         .filter(([_, value]) => value !== undefined)
         .map(([key, value]) => [key, String(value)])
     ).toString() : '';
+
     return apiCall(`/tasks${queryString}`);
   },
 
@@ -98,7 +100,9 @@ export const taskApi = {
   }),
 
   // Delete task
-  deleteTask: (id: string) => apiCall(`/tasks/${id}`, { method: 'DELETE' }),
+  deleteTask: (id: string) => apiCall(`/tasks/${id}`, {
+    method: 'DELETE'
+  }),
 
   // Get task statistics
   getTaskStats: () => apiCall('/tasks/stats'),
@@ -116,7 +120,7 @@ export const userApi = {
   getDashboardData: () => apiCall('/users/dashboard'),
 };
 
-// Add exportTasks function
+// Export tasks as CSV or JSON
 export const exportTasks = (tasks: any[], format: 'csv' | 'json' = 'csv') => {
   if (format === 'csv') {
     const headers = ['Title', 'Description', 'Priority', 'Status', 'Due Date', 'Tags', 'Created', 'Completed'];
