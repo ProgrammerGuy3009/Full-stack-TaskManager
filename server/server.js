@@ -22,6 +22,10 @@ app.use(cors({
 }));
 
 app.use(express.json());
+// Mount task router
+const taskRoutes = require('./routes/task.routes');
+app.use('/api/tasks', taskRoutes);
+
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -241,27 +245,27 @@ app.get('/api/tasks/:id', async (req, res) => {
 //     res.status(500).json({ success: false, message: 'Error creating task', error: error.message });
 //   }
 // });
-app.post('/api/tasks', async (req, res) => {
-  try {
-    const { title, description, priority, dueDate, status, tags } = req.body;
-    console.log('BODY:', req.body);
-    if (!title) return res.status(400).json({ success: false, message: "Title is required" });
-    const newTask = await Task.create({
-      title,
-      description: description || "",
-      priority: priority || "medium",
-      dueDate: dueDate || null,
-      status: status || "todo",
-      tags: tags || [],
-      completed: false,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    });
-    res.status(201).json({ success: true, task: newTask });
-  } catch (error) {
-    res.status(500).json({ success: false, message: "Error creating task", error: error.message });
-  }
-});
+// app.post('/api/tasks', async (req, res) => {
+//   try {
+//     const { title, description, priority, dueDate, status, tags } = req.body;
+//     console.log('BODY:', req.body);
+//     if (!title) return res.status(400).json({ success: false, message: "Title is required" });
+//     const newTask = await Task.create({
+//       title,
+//       description: description || "",
+//       priority: priority || "medium",
+//       dueDate: dueDate || null,
+//       status: status || "todo",
+//       tags: tags || [],
+//       completed: false,
+//       createdAt: new Date(),
+//       updatedAt: new Date()
+//     });
+//     res.status(201).json({ success: true, task: newTask });
+//   } catch (error) {
+//     res.status(500).json({ success: false, message: "Error creating task", error: error.message });
+//   }
+// });
 
 
 app.put('/api/tasks/:id', async (req, res) => {
