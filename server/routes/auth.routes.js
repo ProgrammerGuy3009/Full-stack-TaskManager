@@ -1,33 +1,15 @@
 const express = require('express');
 const router = express.Router();
+const { register, login, verifyToken, getProfile, logout } = require('../controllers/auth.controller');
+const authMiddleware = require('../middleware/auth.middleware'); // If you have this
 
-// Simple test routes for now
-router.post('/register', (req, res) => {
-  console.log('Register attempt:', req.body);
-  res.json({
-    success: true,
-    message: 'Registration endpoint working',
-    user: { id: 1, username: req.body.username, email: req.body.email },
-    token: 'fake-jwt-token-for-testing'
-  });
-});
+// Registration & Login (Public)
+router.post('/register', register);
+router.post('/login', login);
 
-router.post('/login', (req, res) => {
-  console.log('Login attempt:', req.body);
-  res.json({
-    success: true,
-    message: 'Login endpoint working',
-    user: { id: 1, username: 'testuser', email: req.body.email },
-    token: 'fake-jwt-token-for-testing'
-  });
-});
-
-router.get('/verify', (req, res) => {
-  res.json({
-    success: true,
-    message: 'Token verification working',
-    user: { id: 1, username: 'testuser', email: 'test@example.com' }
-  });
-});
+// JWT Protected routes
+router.get('/verify', authMiddleware, verifyToken);    // optional: with middleware for verifying JWT
+router.get('/profile', authMiddleware, getProfile);
+router.post('/logout', logout);
 
 module.exports = router;
