@@ -252,7 +252,29 @@ const getTaskStats = async (req, res) => {
       }
     ]);
 
-    const result = stats || {
+    // Get task breakdown by status
+    const statusBreakdown = await Task.aggregate([
+      { $match: { user: userId } },
+      {
+        $group: {
+          _id: '$status',
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    // Get task breakdown by priority
+    const priorityBreakdown = await Task.aggregate([
+      { $match: { user: userId } },
+      {
+        $group: {
+          _id: '$priority',
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const result = stats[0] || {
       totalTasks: 0,
       completedTasks: 0,
       pendingTasks: 0,
@@ -260,13 +282,39 @@ const getTaskStats = async (req, res) => {
       overdueTasks: 0
     };
 
+    // Build tasksByStatus object
+    const tasksByStatus = {
+      todo: 0,
+      inProgress: 0,
+      completed: 0
+    };
+    statusBreakdown.forEach(item => {
+      if (item._id && tasksByStatus.hasOwnProperty(item._id)) {
+        tasksByStatus[item._id] = item.count;
+      }
+    });
+
+    // Build tasksByPriority object
+    const tasksByPriority = {
+      low: 0,
+      medium: 0,
+      high: 0
+    };
+    priorityBreakdown.forEach(item => {
+      if (item._id && tasksByPriority.hasOwnProperty(item._id)) {
+        tasksByPriority[item._id] = item.count;
+      }
+    });
+
     res.json({
       success: true,
       stats: {
         ...result,
         completionRate: result.totalTasks > 0 
           ? Math.round((result.completedTasks / result.totalTasks) * 100) 
-          : 0
+          : 0,
+        tasksByStatus,
+        tasksByPriority
       }
     });
   } catch (error) {
@@ -278,6 +326,7 @@ const getTaskStats = async (req, res) => {
     });
   }
 };
+
 
 module.exports = {
   getTasks,
