@@ -36,8 +36,8 @@
 // });
 const express = require('express');
 const router = express.Router();
-const Task = require('./Task'); // Correct path if needed
-const { verifyToken } = require('./auth.middleware'); // Path as per your project
+const Task = require('../models/Task'); // Correct path if needed
+const { verifyToken } = require('../middleware/auth.middleware'); // Path as per your project
 
 // Create Task (user from JWT, not body!)
 router.post('/', verifyToken, async (req, res) => {
