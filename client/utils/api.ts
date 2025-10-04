@@ -4,24 +4,29 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 // Simple fetch wrapper for API calls
 const apiCall = async (endpoint: string, options: RequestInit = {}) => {
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-  
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...options.headers,
+  };
+  // Only attach Authorization if token exists and is non-empty
+  if (token && token.trim() !== '') {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
   const config: RequestInit = {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` }),
-      ...options.headers,
-    },
     ...options,
+    headers,
   };
 
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
-    
+
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(`HTTP ${response.status}: ${errorText}`);
     }
-    
+
     const data = await response.json();
     return data;
   } catch (error) {
@@ -41,7 +46,7 @@ export const authApi = {
 
   login: async (loginData: { email: string; password: string }) => {
     return apiCall('/auth/login', {
-      method: 'POST', 
+      method: 'POST',
       body: JSON.stringify(loginData)
     });
   },
@@ -69,13 +74,13 @@ export const taskApi = {
         .filter(([_, value]) => value !== undefined)
         .map(([key, value]) => [key, String(value)])
     ).toString() : '';
-    
+
     return apiCall(`/tasks${queryString}`);
   },
 
   // Get single task
   getTask: (id: string) => apiCall(`/tasks/${id}`),
-  
+
   // Create new task
   createTask: (taskData: {
     title: string;
@@ -96,15 +101,15 @@ export const taskApi = {
   }),
 
   // Delete task
-  deleteTask: (id: string) => apiCall(`/tasks/${id}`, { 
-    method: 'DELETE' 
+  deleteTask: (id: string) => apiCall(`/tasks/${id}`, {
+    method: 'DELETE'
   }),
 
   // Get task statistics
   getTaskStats: () => apiCall('/tasks/stats'),
 
   // Bulk operations
-  bulkOperations: (action: 'complete' | 'delete' | 'archive', taskIds: string[]) => 
+  bulkOperations: (action: 'complete' | 'delete' | 'archive', taskIds: string[]) =>
     apiCall('/tasks/bulk', {
       method: 'POST',
       body: JSON.stringify({ action, taskIds })
@@ -115,7 +120,8 @@ export const taskApi = {
 export const userApi = {
   getDashboardData: () => apiCall('/users/dashboard'),
 };
-// Add this export function
+
+// Export tasks as CSV or JSON
 export const exportTasks = (tasks: any[], format: 'csv' | 'json' = 'csv') => {
   if (format === 'csv') {
     const headers = ['Title', 'Description', 'Priority', 'Status', 'Due Date', 'Tags', 'Created', 'Completed'];
