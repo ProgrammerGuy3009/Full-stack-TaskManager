@@ -5,11 +5,11 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 const apiCall = async (endpoint: string, options: RequestInit = {}) => {
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
 
+  // Build headers: always send Content-Type, add Authorization only if token exists
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...options.headers,
   };
-  // Only attach Authorization if token exists and is non-empty
   if (token && token.trim() !== '') {
     headers.Authorization = `Bearer ${token}`;
   }
@@ -43,14 +43,12 @@ export const authApi = {
       body: JSON.stringify(userData)
     });
   },
-
   login: async (loginData: { email: string; password: string }) => {
     return apiCall('/auth/login', {
       method: 'POST',
       body: JSON.stringify(loginData)
     });
   },
-
   verifyToken: async () => {
     return apiCall('/auth/verify');
   },
@@ -74,7 +72,6 @@ export const taskApi = {
         .filter(([_, value]) => value !== undefined)
         .map(([key, value]) => [key, String(value)])
     ).toString() : '';
-
     return apiCall(`/tasks${queryString}`);
   },
 
@@ -101,9 +98,7 @@ export const taskApi = {
   }),
 
   // Delete task
-  deleteTask: (id: string) => apiCall(`/tasks/${id}`, {
-    method: 'DELETE'
-  }),
+  deleteTask: (id: string) => apiCall(`/tasks/${id}`, { method: 'DELETE' }),
 
   // Get task statistics
   getTaskStats: () => apiCall('/tasks/stats'),
@@ -121,7 +116,7 @@ export const userApi = {
   getDashboardData: () => apiCall('/users/dashboard'),
 };
 
-// Export tasks as CSV or JSON
+// Add exportTasks function
 export const exportTasks = (tasks: any[], format: 'csv' | 'json' = 'csv') => {
   if (format === 'csv') {
     const headers = ['Title', 'Description', 'Priority', 'Status', 'Due Date', 'Tags', 'Created', 'Completed'];
