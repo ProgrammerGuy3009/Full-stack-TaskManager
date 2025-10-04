@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-
 const taskSchema = new mongoose.Schema({
   title: {
     type: String,
@@ -23,7 +22,7 @@ const taskSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['todo', 'in-progress', 'completed'],
+    enum: ['todo', 'in-progress', 'completed'], // use 'in-progress', NOT 'inProgress'
     default: 'todo'
   },
   dueDate: {
@@ -43,18 +42,12 @@ const taskSchema = new mongoose.Schema({
   toJSON: { virtuals: true },
   toObject: { virtuals: true }
 });
-
-// Indexes for better performance
 taskSchema.index({ user: 1, completed: 1 });
 taskSchema.index({ user: 1, createdAt: -1 });
 taskSchema.index({ user: 1, dueDate: 1 });
-
-// Virtual for checking if task is overdue
 taskSchema.virtual('isOverdue').get(function() {
   return this.dueDate && this.dueDate < new Date() && !this.completed;
 });
-
-// Pre-save middleware to update status based on completion
 taskSchema.pre('save', function(next) {
   if (this.completed && this.status !== 'completed') {
     this.status = 'completed';
@@ -63,5 +56,4 @@ taskSchema.pre('save', function(next) {
   }
   next();
 });
-
 module.exports = mongoose.model('Task', taskSchema);

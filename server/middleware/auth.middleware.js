@@ -1,42 +1,21 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const authMiddleware = async (req, res, next) => {
+
+module.exports = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ success: false, message: 'No auth token provided' });
+  }
+  const token = authHeader.split(' ')[1];
   try {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: 'Access denied. No token provided.'
-      });
-    }
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id).select('-password');
+    const user = await User.findById(decoded.id); // or decoded._id, depending on your sign-in code
     if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: 'Token is not valid. User not found.'
-      });
+      return res.status(401).json({ success: false, message: 'Invalid user from token' });
     }
-    if (!user.isActive) {
-      return res.status(401).json({
-        success: false,
-        message: 'Account is deactivated.'
-      });
-    }
-    // CRITICAL LINE FOR TASKS:
-    req.user = { id: user._id };
+    req.user = user; // Now you'll always have user._id
     next();
-  } catch (error) {
-    if (error.name === 'TokenExpiredError') {
-      return res.status(401).json({
-        success: false,
-        message: 'Token has expired. Please login again.'
-      });
-    } 
-    return res.status(401).json({
-      success: false,
-      message: 'Token is not valid.'
-    });
+  } catch (err) {
+    return res.status(401).json({ success: false, message: 'Invalid or expired token' });
   }
 };
-module.exports = authMiddleware;
